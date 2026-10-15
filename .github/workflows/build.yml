@@ -1,0 +1,18 @@
+name: Build O-SAFE
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure CMake
+        run: cmake -S . -B build
+      - name: Build with warnings enabled
+        run: cmake --build build --parallel
