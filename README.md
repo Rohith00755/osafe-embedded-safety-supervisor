@@ -1,8 +1,10 @@
 # O-SAFE — Embedded Safety Supervisor (Prototype)
 
+[![Build and test](https://github.com/Rohith00755/osafe-embedded-safety-supervisor/actions/workflows/build.yml/badge.svg)](https://github.com/Rohith00755/osafe-embedded-safety-supervisor/actions/workflows/build.yml)
+
 O-SAFE is a portfolio prototype exploring fault-aware communication between a QNX-oriented supervisory process and an ESP32 node. It focuses on C++/POSIX sockets, a small message protocol, heartbeat monitoring, diagnostic state transitions, and bench testing.
 
-> **Status:** Initial host-buildable prototype. Not a deployed or certified automotive safety system. No vehicle/actuator integration, QNX target validation, timing guarantees, or safety certification are claimed.
+> **Status:** Host-buildable prototype. It is not a deployed or certified automotive safety system. Vehicle/actuator integration, QNX target validation, timing guarantees, and safety certification are not claimed.
 
 ## Architecture
 
@@ -25,15 +27,18 @@ Send newline-terminated records to TCP port `5000`:
 
 The prototype supports one client at a time. A heartbeat timeout changes state to `DEGRADED`; an `ALERT` changes state to `FAULT`. These are software diagnostics only and do not imply a safe physical state.
 
-## Build on a Linux development host
+## Build and test on Linux
 
-Requirements: CMake 3.16+, C++17 compiler, POSIX sockets.
+Requirements: CMake 3.16+, a C++17 compiler, and POSIX sockets.
 
 ```bash
 cmake -S . -B build
-cmake --build build
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
 ./build/osafe_supervisor
 ```
+
+The current CTest suite checks protocol parsing for valid heartbeat/status/alert records and rejects empty, malformed, invalid-token, and over-length messages. GitHub Actions runs the build and parser tests on pushes and pull requests. This does **not** yet test the full TCP server's timing, disconnect, or recovery behavior.
 
 Optional port override: `OSAFE_PORT=5001 ./build/osafe_supervisor`.
 
@@ -53,24 +58,27 @@ ALERT|SENSOR_TIMEOUT|imu
 ## Project layout
 
 ```text
+├── .github/workflows/build.yml
 ├── README.md
 ├── CMakeLists.txt
 ├── include/protocol.hpp
 ├── src/supervisor.cpp
+├── tests/protocol_tests.cpp
 ├── docs/ARCHITECTURE.md
 ├── docs/TEST_PLAN.md
 ├── docs/QNX_PORTING.md
 └── firmware/esp32_tcp_node/esp32_tcp_node.ino
 ```
 
-## Limitations and milestones
+## Limitations and next milestones
 
 - No vehicle or physical actuator integration.
 - No authentication, TLS, multi-client support, or production recovery policy.
 - Timeout values are demonstration defaults; no latency or real-time guarantees are claimed.
 - QNX compatibility must be built and tested with the actual QNX SDP/BSP toolchain.
-- [ ] Build and test on Linux; save actual logs.
-- [ ] Add automated parser/state-machine tests and fault-injection evidence.
+- [x] Add protocol parser unit tests and CI build/test workflow.
+- [ ] Run the CI workflow and review its result.
+- [ ] Exercise TCP timeout, malformed input, fragmentation, and reconnect cases; save actual logs.
 - [ ] Bench-test ESP32-to-host communication.
 - [ ] Port to the selected QNX target and record compiler/toolchain details.
 - [ ] Define requirements and review hazards before considering any safety-critical use.
