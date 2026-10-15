@@ -1,4 +1,4 @@
-name: Build O-SAFE
+name: Build and test O-SAFE
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  linux-build:
+  linux-build-test:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -16,3 +16,5 @@ jobs:
         run: cmake -S . -B build
       - name: Build with warnings enabled
         run: cmake --build build --parallel
+      - name: Run protocol parser tests
+        run: ctest --test-dir build --output-on-failure
